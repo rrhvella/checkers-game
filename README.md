@@ -1,5 +1,11 @@
 Checkers implemented using C++ and Open GL.
 
+
+  <img src="/screenshots/Image1.png" style="display: block" width="400" height="300"></img>
+  <img src="/screenshots/Image2.png" style="display: block" width="400" height="300"></img>
+  <img src="/screenshots/Image3.png" style="display: block" width="400" height="300"></img>
+
+
 Installation
 -------------
 
