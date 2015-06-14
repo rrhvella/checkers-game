@@ -3,3 +3,4 @@ Release
 Debug
 CCheckers.vcxproj.user
 *.sdf
+/CCheckers.opensdf
