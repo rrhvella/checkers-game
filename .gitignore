@@ -1,0 +1,5 @@
+packages
+Release
+Debug
+CCheckers.vcxproj.user
+*.sdf
