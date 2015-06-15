@@ -84,6 +84,8 @@ private:
 		unsigned int turn;
 		shared_ptr<CheckersTokenModel> targetToken;
 		shared_ptr<CheckersTokenModel> jumpedToken;
+
+		int tokenIndexPerformingJump;
 		
 		vec2 position;
 		vec2 oldPosition;
@@ -91,7 +93,7 @@ private:
 		bool wasEnemysTurn;
 		bool wasKing;
 
-		LegalMove(unsigned int turn, const shared_ptr<CheckersTokenModel>& targetToken, const shared_ptr<CheckersTokenModel>& jumpedToken, const vec2& position, bool wasEnemysTurn);
+		LegalMove(unsigned int turn, const shared_ptr<CheckersTokenModel>& targetToken, const shared_ptr<CheckersTokenModel>& jumpedToken, const vec2& position, bool wasEnemysTurn, int tokenIndexPerformingJump);
 
 		vec2 getPosition();
 	};
@@ -100,6 +102,8 @@ private:
 	shared_ptr<vector<shared_ptr<ILegalMove>>> legalMovesByBoardIndex[BOARD_TOTAL_NUMBER_OF_SQUARES];
 
 	vector<shared_ptr<ILegalMove>> currentLegalMoves;
+
+	int tokenIndexPerformingJump;
 
 	bool isEnemysTurn;
 	unsigned int turn;
@@ -120,9 +124,10 @@ private:
 	vector<shared_ptr<LegalMove>> calculateLegalMoves();
 	stack<shared_ptr<LegalMove>> history;
 
-	void analyzeMovesAndBeginTurn(bool previousTurnHadNoMoves);
+	void analyzeMovesAndBeginTurn();
+	void analyseAndBeginCurrentPlayerTurn(const shared_ptr<CheckersTokenModel>& tokenPerformingJump);
 	void advanceToCurrentPlayersNextTurn(const shared_ptr<CheckersTokenModel>& tokenPerformingJump);
-	void advanceToNextPlayersTurn(bool previousTurnHadNoMoves);
+	void advanceToNextPlayersTurn();
 
 	CheckersModelWinner winner;
 

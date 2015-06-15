@@ -110,7 +110,7 @@ vector<shared_ptr<CheckersModel::LegalMove>> CheckersModel::CheckersTokenModel::
 		vec2& positionToCheck = position + *it;
 
 		if (!skipNormalMoves && isLegalMove(positionToCheck)) {
-			results.push_back(make_shared<LegalMove>(parent.turn, shared_from_this(), shared_ptr<CheckersTokenModel>(), positionToCheck, parent.isEnemysTurn));
+			results.push_back(make_shared<LegalMove>(parent.turn, shared_from_this(), shared_ptr<CheckersTokenModel>(), positionToCheck, parent.isEnemysTurn, parent.tokenIndexPerformingJump));
 		}
 
 		shared_ptr<CheckersModel::CheckersTokenModel> jumpedToken;
@@ -122,7 +122,7 @@ vector<shared_ptr<CheckersModel::LegalMove>> CheckersModel::CheckersTokenModel::
 				results.clear();
 			}
 
-			results.push_back(make_shared<LegalMove>(parent.turn, shared_from_this(), jumpedToken, jumpPosition, parent.isEnemysTurn));
+			results.push_back(make_shared<LegalMove>(parent.turn, shared_from_this(), jumpedToken, jumpPosition, parent.isEnemysTurn, parent.tokenIndexPerformingJump));
 		}
 	}
 
@@ -181,11 +181,13 @@ bool CheckersModel::CheckersTokenModel::isLegalJumpMove(const vec2& positionToCh
 	return true;
 }
 
-CheckersModel::LegalMove::LegalMove(unsigned int turn, const shared_ptr<CheckersTokenModel>& targetToken, const shared_ptr<CheckersTokenModel>& jumpedToken, const vec2& position, bool wasEnemysTurn) {
+CheckersModel::LegalMove::LegalMove(unsigned int turn, const shared_ptr<CheckersTokenModel>& targetToken, const shared_ptr<CheckersTokenModel>& jumpedToken, const vec2& position, bool wasEnemysTurn, int tokenIndexPerformingJump) {
 	this->turn = turn;
 	
 	this->targetToken = targetToken;
 	this->jumpedToken = jumpedToken;
+
+	this->tokenIndexPerformingJump = tokenIndexPerformingJump;
 
 	this->oldPosition = targetToken->getPosition();
 	this->position = position;
@@ -204,11 +206,12 @@ CheckersModel::CheckersModel() {
 	placeTokens(false);
 
 	isEnemysTurn = false;
+	tokenIndexPerformingJump = -1;
 	turn = 0;
 
 	winner = CHECKERS_MODEL_GAME_UNFINISHED;
 
-	analyzeMovesAndBeginTurn(false);
+	analyzeMovesAndBeginTurn();
 }
 
 CheckersModel::CheckersModel(const CheckersModel& other) {
@@ -219,11 +222,18 @@ CheckersModel::CheckersModel(const CheckersModel& other) {
 	}
 
 	isEnemysTurn = other.isEnemysTurn;
+
 	turn = 0;
 
 	winner = other.winner;
+	tokenIndexPerformingJump = other.tokenIndexPerformingJump;
 
-	analyzeMovesAndBeginTurn(false);
+	if (tokenIndexPerformingJump != -1) {
+		advanceToCurrentPlayersNextTurn(boardMap[tokenIndexPerformingJump]);
+	}
+	else {
+		analyzeMovesAndBeginTurn();
+	}
 }
 
 int CheckersModel::getMovementDirectionFromTokenType(bool isEnemy) {
@@ -314,36 +324,43 @@ void CheckersModel::beginTurn(vector<shared_ptr<CheckersModel::LegalMove>> legal
 }
 
 void CheckersModel::advanceToCurrentPlayersNextTurn(const shared_ptr<CheckersTokenModel>& tokenPerformingJump) {
-	turn++;
+	turn++; 
+	analyseAndBeginCurrentPlayerTurn(tokenPerformingJump);
+}
+
+void CheckersModel::analyseAndBeginCurrentPlayerTurn(const shared_ptr<CheckersTokenModel>& tokenPerformingJump) {
+	tokenIndexPerformingJump = getIndexFromCoordinates(tokenPerformingJump->position);
 
 	vector<shared_ptr<LegalMove>> legalMoves = tokenPerformingJump->calculateLegalMoves(true);
 	if (legalMoves.size() > 0) {
 		beginTurn(legalMoves);
 	}
 	else {
-		advanceToNextPlayersTurn(false);
+		advanceToNextPlayersTurn();
 	}
 }
 
-void CheckersModel::analyzeMovesAndBeginTurn(bool previousTurnHadNoMoves) {
+void CheckersModel::analyzeMovesAndBeginTurn() {
 	vector<shared_ptr<LegalMove>> legalMoves = calculateLegalMoves();
 	if (legalMoves.size() == 0) {
-		if (!previousTurnHadNoMoves) {
-			advanceToNextPlayersTurn(true);
+		if (isEnemysTurn) {
+			winner = CHECKERS_MODEL_WINNER_PLAYER;
 		}
 		else {
-			winner = CHECKERS_MODEL_NO_WINNER;
+			winner = CHECKERS_MODEL_WINNER_ENEMY;
 		}
 	} else {
 		beginTurn(legalMoves);
 	}
 }
 
-void CheckersModel::advanceToNextPlayersTurn(bool previousTurnHadNoMoves) {
+void CheckersModel::advanceToNextPlayersTurn() {
 	turn++;
+	tokenIndexPerformingJump = -1;
+
 	isEnemysTurn = !isEnemysTurn;
 
-	analyzeMovesAndBeginTurn(previousTurnHadNoMoves);
+	analyzeMovesAndBeginTurn();
 }
 
 void CheckersModel::popMove() {
@@ -371,7 +388,14 @@ void CheckersModel::popMove() {
 	turn = lastLegalMove->turn;
 	isEnemysTurn = lastLegalMove->wasEnemysTurn;
 
-	analyzeMovesAndBeginTurn(false);
+	tokenIndexPerformingJump = lastLegalMove->tokenIndexPerformingJump;
+
+	if (tokenIndexPerformingJump != -1) {
+		advanceToCurrentPlayersNextTurn(boardMap[tokenIndexPerformingJump]);
+	} else {
+		analyzeMovesAndBeginTurn();
+	}
+
 }
 
 void CheckersModel::applyLegalMove(shared_ptr<ILegalMove>& legalMove) {
@@ -411,7 +435,7 @@ void CheckersModel::applyLegalMove(shared_ptr<ILegalMove>& legalMove) {
 		}
 	}
 	else {
-		advanceToNextPlayersTurn(false);
+		advanceToNextPlayersTurn();
 	}
 
 	history.push(castLegalMove);
