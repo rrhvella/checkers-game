@@ -94,6 +94,5 @@ shared_ptr<ILegalMove> FitnessBasedCheckersAI::getBestMove(const shared_ptr<cons
 		}
 	}
 
-	assert(false, "It should be impossible to reach this point");
-	return shared_ptr<ILegalMove>();
+	return originalLegalMoves[0];
 }
