@@ -189,7 +189,7 @@ void CheckersGame::initialiseSDL() {
 void CheckersGame::initialise() {
 	initialiseSDL();
 
-	graphicsManager = make_unique<Graphics>("Bob's Checkers", 800, 600, vec4(0.0f, 0.7f, 0.7f, 1.f));
+	graphicsManager = make_unique<Graphics>("Bob's Checkers v1.1", 800, 600, vec4(0.0f, 0.7f, 0.7f, 1.f));
 	checkersModel = make_shared<CheckersModel>();
 	checkersAi = make_unique<FitnessBasedCheckersAI>();
 	
